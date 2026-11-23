@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Streakly: Daily Habit Tracker",
+  "short_name": "Streakly",
+  "description": "Build daily habits, fill the water circle, and keep your streaks going.",
+  "lang": "en",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e8f3f6",
+  "theme_color": "#0d5c7a",
+  "categories": ["health", "lifestyle", "productivity"],
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
