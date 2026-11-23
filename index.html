@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d5c7a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Streakly: Daily Habit Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8f3f6;--surface:#ffffff;--ink:#0d2a3a;--mute:#5b7684;--water:#1b8fb5;--deep:#0d5c7a;--done:#f2705a;--line:#cfe2e9;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#08202b;--surface:#0f3040;--ink:#e6f4f8;--mute:#8fb0bd;--water:#3cb6dd;--deep:#1b8fb5;--done:#ff8a73;--line:#1d4558}}
+:root[data-theme="dark"]{--bg:#08202b;--surface:#0f3040;--ink:#e6f4f8;--mute:#8fb0bd;--water:#3cb6dd;--deep:#1b8fb5;--done:#ff8a73;--line:#1d4558}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:480px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;font-weight:800;margin:0 0 2px}
+.sub{color:var(--mute);margin:0 0 18px;font-size:.95rem}
+.hero{background:var(--surface);border-radius:28px;padding:20px;display:flex;align-items:center;gap:18px;border:1px solid var(--line)}
+.tank{position:relative;width:104px;height:104px;border-radius:50%;overflow:hidden;border:3px solid var(--water);flex:none;background:var(--bg)}
+.fill{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(var(--water),var(--deep));transition:height .6s ease}
+.pct{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:1.5rem;color:var(--ink);mix-blend-mode:normal;text-shadow:0 0 6px var(--surface),0 0 2px var(--surface)}
+.hero p{margin:0}.big{font-size:1.15rem;font-weight:600}.small{color:var(--mute);font-size:.9rem;margin-top:4px!important}
+.week{display:flex;gap:6px;align-items:flex-end;height:56px;margin:16px 4px 4px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.bar i{width:100%;border-radius:8px 8px 3px 3px;background:var(--water);min-height:4px;opacity:.85}
+.bar span{font-size:.7rem;color:var(--mute)}
+.list{list-style:none;margin:16px 0;padding:0;display:grid;gap:10px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.chk{width:44px;height:44px;border-radius:50%;border:2px solid var(--water);background:transparent;color:#fff;font-size:1.3rem;cursor:pointer;flex:none}
+.chk[aria-pressed="true"]{background:var(--done);border-color:var(--done)}
+.nm{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.st{font-size:.85rem;color:var(--mute)}
+.del{background:none;border:0;color:var(--mute);font-size:1.2rem;cursor:pointer;padding:8px}
+.add{display:flex;gap:8px}
+.add input{flex:1;min-width:0;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
+.add button{padding:0 20px;border-radius:16px;border:0;background:var(--deep);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--done);outline-offset:2px}
+.empty{text-align:center;color:var(--mute);padding:20px}
+.ad{margin-top:24px;border:1px dashed var(--line);border-radius:14px;padding:14px;text-align:center;color:var(--mute);font-size:.8rem}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Streakly</h1>
+<p class="sub" id="date"></p>
+<section class="hero" aria-live="polite">
+<div class="tank"><div class="fill" id="fill"></div><div class="pct" id="pct">0%</div></div>
+<div><p class="big" id="msg"></p><p class="small" id="best"></p></div>
+</section>
+<div class="week" id="week" aria-label="Last 7 days"></div>
+<ul class="list" id="list"></ul>
+<div class="add"><input id="in" maxlength="40" placeholder="New habit, like Read 10 pages" aria-label="New habit"><button id="addBtn">Add habit</button></div>
+<div class="ad">Ad space: replace with your AdMob banner in the Android app</div>
+</main>
+<script>
+(function(){
+var KEY="streakly-v1",store=null;
+try{store=window.localStorage}catch(e){}
+function load(){try{var r=store&&store.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}
+return [{id:1,name:"Drink 8 glasses of water",days:{}},{id:2,name:"Walk for 20 minutes",days:{}}]}
+function save(){try{store&&store.setItem(KEY,JSON.stringify(habits))}catch(e){}}
+var habits=load();
+function key(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function back(n){var d=new Date();d.setDate(d.getDate()-n);return d}
+function streak(h){var n=0,i=h.days[key(back(0))]?0:1;while(h.days[key(back(i))]){n++;i++}return n}
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function render(){
+var today=key(back(0)),total=habits.length,done=habits.filter(function(h){return h.days[today]}).length;
+var p=total?Math.round(done/total*100):0;
+document.getElementById("date").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+document.getElementById("fill").style.height=p+"%";
+document.getElementById("pct").textContent=p+"%";
+document.getElementById("msg").textContent=!total?"Add your first habit":done===total?"All done for today":done+" of "+total+" done today";
+var best=0;habits.forEach(function(h){best=Math.max(best,streak(h))});
+document.getElementById("best").textContent=best?"Longest streak: "+best+(best===1?" day":" days"):"Check one off to start a streak";
+var w="";for(var i=6;i>=0;i--){var d=back(i),k=key(d),c=habits.filter(function(h){return h.days[k]}).length;
+var hh=total?Math.max(4,Math.round(c/total*40)):4;
+w+='<div class="bar"><i style="height:'+hh+'px"></i><span>'+d.toLocaleDateString(undefined,{weekday:"narrow"})+'</span></div>'}
+document.getElementById("week").innerHTML=w;
+var l=document.getElementById("list");
+if(!total){l.innerHTML='<li class="empty">No habits yet. Add one below.</li>';return}
+l.innerHTML=habits.map(function(h){var on=!!h.days[today],s=streak(h);
+return '<li class="row"><button class="chk" data-t="'+h.id+'" aria-pressed="'+on+'" aria-label="Mark '+esc(h.name)+' done">'+(on?"✓":"")+'</button><div class="nm">'+esc(h.name)+'<div class="st">'+s+(s===1?" day":" days")+' streak</div></div><button class="del" data-d="'+h.id+'" aria-label="Delete '+esc(h.name)+'">✕</button></li>'}).join("")}
+document.getElementById("list").addEventListener("click",function(e){
+var t=e.target.closest("[data-t]"),d=e.target.closest("[data-d]"),today=key(back(0));
+if(t){var h=habits.filter(function(x){return x.id==t.dataset.t})[0];if(h.days[today])delete h.days[today];else h.days[today]=true;save();render()}
+if(d){if(confirm("Delete this habit and its streak?")){habits=habits.filter(function(x){return x.id!=d.dataset.d});save();render()}}});
+function add(){var i=document.getElementById("in"),v=i.value.trim();if(!v)return;habits.push({id:Date.now(),name:v,days:{}});i.value="";save();render()}
+document.getElementById("addBtn").addEventListener("click",add);
+document.getElementById("in").addEventListener("keydown",function(e){if(e.key==="Enter")add()});
+render();
+})();
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
+</script>
+</body>
+</html>
